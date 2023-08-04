@@ -1,0 +1,18 @@
+{
+  "name": "french-law-to-txt",
+  "version": "1.0.0",
+  "description": "Parses codes.droit.org's XML files into text files that can be digested by an LLM.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "pull-xml": "cd scripts; bash pull-xml.sh",
+    "xml-to-txt": "cd scripts; node xml-to-txt.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "glob": "^10.3.3",
+    "node-html-parser": "^6.1.5",
+    "uuidv4": "^6.2.13"
+  }
+}

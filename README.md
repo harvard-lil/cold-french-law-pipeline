@@ -1,4 +1,7 @@
-# french-law-to-txt
+# french-law-for-llms
+
+> 🚧 Work in progress
+
 Parses [codes.droit.org](https://codes.droit.org)'s XML files into text files that can be _"ingested"_ by an LLM, for example via embeddings.
 
 ## Output

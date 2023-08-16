@@ -5,14 +5,21 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "pull-xml": "cd scripts; bash pull-xml.sh",
-    "xml-to-txt": "cd scripts; node xml-to-txt.js"
+    "pull-xml": "mkdir xml; bash scripts/pull-xml.sh",
+    "xml-to-txt": "mkdir txt; node scripts/xml-to-txt.js",
+    "clear-txt": "rm -rf txt; mkdir txt",
+    "clear-xml": "rm -rf xml; mkdir xml"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^16.3.1",
     "glob": "^10.3.3",
     "node-html-parser": "^6.1.5",
+    "openai": "^4.0.0",
     "uuidv4": "^6.2.13"
+  },
+  "devDependencies": {
+    "standard": "^17.1.0"
   }
 }

@@ -6,21 +6,24 @@ import 'dotenv/config'
 import { parse } from 'node-html-parser'
 import { globSync } from 'glob'
 import { uuid } from 'uuidv4'
-import { OpenAI } from 'openai'
+import { v2 } from '@google-cloud/translate'
 
 const INPUT_PATH = './xml'
 
 const OUTPUT_PATH = './txt'
 
-const TRANSLATIONS_BACKUP_PATH = './translations_backup'
-
-// Need OpenAI API key
-if ('OPENAI_API_KEY' in process.env === false) {
-  throw new Error('OPENAI_API_KEY environment variable must be set.')
+// Need Google Cloud credentials
+if ('GOOGLE_CLOUD_API_KEY' in process.env === false) {
+  throw new Error('GOOGLE_CLOUD_API_KEY environment variable must be set.')
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+if ('GOOGLE_CLOUD_PROJECT_ID' in process.env === false) {
+  throw new Error('GOOGLE_CLOUD_PROJECT_ID environment variable must be set.')
+}
+
+const googleTranslate = new v2.Translate({
+  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+  key: process.env.GOOGLE_CLOUD_API_KEY
 })
 
 // For each xml file (codes):
@@ -93,37 +96,9 @@ for (const filename of globSync(`${INPUT_PATH}/*.xml`)) {
 
     // English translation
     try {
-      let translation = ''
-      const backupPath = path.join(TRANSLATIONS_BACKUP_PATH, `${articleId}.txt`)
-
-      //
-      // Load from translations backup if available
-      //
-      try {
-        translation = await fs.readFile(backupPath)
-        console.log(`English translation for ${articleId} was loaded from backup.`)
-      }
-      //
-      // Ask CHAT GPT otherwise
-      //
-      catch (err) {
-        const prompt = `Translate the following text (in french), to english:\n${article.innerText.trim()}`
-
-        const response = await openai.chat.completions.create({
-          model: 'gpt-3.5-turbo',
-          messages: [{ role: 'user', content: prompt }]
-        })
-
-        translation = response.choices[0].message.content
-        console.log(`English translation for ${articleId} was pulled from GPT-3.5.`)
-      }
-
-      // Add to output
-      output += '\nArticle text (translated to english by GPT3.5):\n'
+      const [translation] = await googleTranslate.translate(article.innerText.trim(), 'en')
+      output += '\nArticle text (translated to english by Google):\n'
       output += translation
-
-      // Save backup
-      await fs.writeFile(backupPath, translation)
     } catch (err) {
       console.error(`Could not translate ${articleId}. Skipping.`)
       console.trace(err)

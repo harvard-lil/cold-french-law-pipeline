@@ -12,6 +12,8 @@ const INPUT_PATH = './xml'
 
 const OUTPUT_PATH = './txt'
 
+const TRANSLATIONS_BACKUP_PATH = './translations_backup'
+
 // Need OpenAI API key
 if ('OPENAI_API_KEY' in process.env === false) {
   throw new Error('OPENAI_API_KEY environment variable must be set.')
@@ -91,20 +93,37 @@ for (const filename of globSync(`${INPUT_PATH}/*.xml`)) {
 
     // English translation
     try {
-      const prompt = `Translate the following text (in french), to english:\n${article.innerText.trim()}`
+      let translation = ''
+      const backupPath = path.join(TRANSLATIONS_BACKUP_PATH, `${articleId}.txt`)
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [{ role: 'user', content: prompt }]
-      })
+      //
+      // Load from translations backup if available
+      //
+      try {
+        translation = await fs.readFile(backupPath)
+        console.log(`English translation for ${articleId} was loaded from backup.`)
+      }
+      //
+      // Ask CHAT GPT otherwise
+      //
+      catch (err) {
+        const prompt = `Translate the following text (in french), to english:\n${article.innerText.trim()}`
 
-      const translation = response.choices[0].message.content
+        const response = await openai.chat.completions.create({
+          model: 'gpt-3.5-turbo',
+          messages: [{ role: 'user', content: prompt }]
+        })
 
+        translation = response.choices[0].message.content
+        console.log(`English translation for ${articleId} was pulled from GPT-3.5.`)
+      }
+
+      // Add to output
       output += '\nArticle text (translated to english by GPT3.5):\n'
       output += translation
 
-      // Temporary: save backup in /translations
-      // await fs.writeFile(`./translations/${articleId}.txt`, translation)
+      // Save backup
+      await fs.writeFile(backupPath, translation)
     } catch (err) {
       console.error(`Could not translate ${articleId}. Skipping.`)
       console.trace(err)

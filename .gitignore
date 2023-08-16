@@ -2,4 +2,4 @@
 txt/*/*.txt
 node_modules
 .env
-translations
+translations_backup

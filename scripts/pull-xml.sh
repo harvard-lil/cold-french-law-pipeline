@@ -1,8 +1,4 @@
-cd ..;
-mkdir xml;
-mkdir txt;
 cd ./xml;
-
 wget "https://codes.droit.org/payloads/Code%20de%20l'action%20sociale%20et%20des%20familles.xml";
 wget "https://codes.droit.org/payloads/Code%20de%20l'artisanat.xml";
 wget "https://codes.droit.org/payloads/Code%20des%20assurances.xml";

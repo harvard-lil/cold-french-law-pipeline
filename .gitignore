@@ -1,3 +1,5 @@
 *.xml
 txt/*/*.txt
 node_modules
+.env
+translations_backup

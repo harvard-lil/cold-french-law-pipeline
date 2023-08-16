@@ -1,39 +1,61 @@
-import fs from "fs/promises"
-import path from "path"
+import fs from 'fs/promises'
+import path from 'path'
+
+import 'dotenv/config'
 
 import { parse } from 'node-html-parser'
 import { globSync } from 'glob'
 import { uuid } from 'uuidv4'
+import { v2 } from '@google-cloud/translate'
 
-const INPUT_PATH = '../xml'
+const INPUT_PATH = './xml'
 
-const OUTPUT_PATH = '../txt'
+const OUTPUT_PATH = './txt'
 
+// Need Google Cloud credentials
+if ('GOOGLE_CLOUD_API_KEY' in process.env === false) {
+  throw new Error('GOOGLE_CLOUD_API_KEY environment variable must be set.')
+}
+
+if ('GOOGLE_CLOUD_PROJECT_ID' in process.env === false) {
+  throw new Error('GOOGLE_CLOUD_PROJECT_ID environment variable must be set.')
+}
+
+const googleTranslate = new v2.Translate({
+  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+  key: process.env.GOOGLE_CLOUD_API_KEY
+})
+
+// For each xml file (codes):
 for (const filename of globSync(`${INPUT_PATH}/*.xml`)) {
   const xml = (await fs.readFile(filename)).toString()
   const dom = parse(xml)
   const code = dom.querySelector('code')
   const codeName = code.getAttribute('nom')
 
-  const codeOutputPath = path.join(OUTPUT_PATH, codeName ? codeName : `${uuid()}`)
+  const codeOutputPath = path.join(OUTPUT_PATH, codeName || `${uuid()}`)
 
-  // For each code, create a folder 
-  await fs.mkdir(codeOutputPath)
+  // For each code, create a folder if needed
+  try {
+    await fs.mkdir(codeOutputPath)
+  } catch (_err) {
+  }
 
   // For each article: prepare output, put in context, and write to separate file
   for (const article of dom.querySelectorAll('article[etat="VIGUEUR"]')) {
     const articleTitle = article.getAttribute('modTitle')
-    let articleId = article.getAttribute('cid')
-    let headings = []
-    let output = ""
-    let filename = ""
+    let articleId = article.getAttribute('id')
+    const articleNumber = article.getAttribute('num')
+    const headings = []
+    let output = ''
+    let filename = ''
 
     // Set up an article id if missing
-    if (!articleId || `${articleId}` === "undefined") {
+    if (!articleId || `${articleId}` === 'undefined') {
       articleId = `no-title-${uuid()}`
     }
 
-    // Go through parent nodes to pull headings
+    // Go through parent nodes to pull headings (unused at the moment)
     if (articleTitle) {
       headings.push(articleTitle)
     }
@@ -41,8 +63,8 @@ for (const filename of globSync(`${INPUT_PATH}/*.xml`)) {
     let parent = article.parentNode
 
     while (parent) {
-      if (parent.tagName === "T") {
-        headings.push(parent.getAttribute("title"))
+      if (parent.tagName === 'T') {
+        headings.push(parent.getAttribute('title'))
         parent = parent.parentNode
       } else {
         break
@@ -51,31 +73,40 @@ for (const filename of globSync(`${INPUT_PATH}/*.xml`)) {
 
     headings.reverse()
 
-    // Prepare output
+    // Intro
     output += `The following is an excerpt of France's "${codeName}" which is part of french law.\n`
-    output += `The rule described here is currently applicable law. This text is in French. \n\n`
+    output += 'The rule ("article") described here is currently applicable law. \n\n'
 
-    output += `Context within "${codeName}":\n`
-    for (let i = 0; i < headings.length; i++) {
-      const heading = headings[i]
-      
-      if (heading === articleTitle) {
-        continue
-      }
-      
-      output += `${" ".repeat(i+1)}- ${heading.trim()}\n`
-    }
-
+    // Title
     if (articleTitle) {
-      output += `\n${articleTitle}:\n\n`
+      output += `Article title: ${articleTitle}:\n`
     }
 
-    output += `${article.innerText.trim()}\n`
-    
+    if (articleNumber) {
+      output += `Article number: ${articleNumber}\n`
+    }
+
+    if (articleId && !articleId.startsWith('no-title')) {
+      output += `Article identifier: ${articleId}\n`
+    }
+
+    // Text
+    output += '\nArticle text (french):\n'
+    output += `${article.innerText.trim()}\n\n`
+
+    // English translation
+    try {
+      const [translation] = await googleTranslate.translate(article.innerText.trim(), 'en')
+      output += '\nArticle text (translated to english by Google):\n'
+      output += translation
+    } catch (err) {
+      console.error(`Could not translate ${articleId}. Skipping.`)
+      console.trace(err)
+    }
+
     // Write to file
     filename = path.join(codeOutputPath, `${articleId}.txt`)
     console.log(`Writing ${filename} to disk.`)
     await fs.writeFile(filename, output)
   }
-
 }

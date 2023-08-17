@@ -6,25 +6,16 @@ import 'dotenv/config'
 import { parse } from 'node-html-parser'
 import { globSync } from 'glob'
 import { uuid } from 'uuidv4'
-import { v2 } from '@google-cloud/translate'
 
 const INPUT_PATH = './xml'
 
 const OUTPUT_PATH = './txt'
 
-// Need Google Cloud credentials
-if ('GOOGLE_CLOUD_API_KEY' in process.env === false) {
-  throw new Error('GOOGLE_CLOUD_API_KEY environment variable must be set.')
-}
+const TRANSLATIONS_BACKUP_PATH = './translations_backup'
 
-if ('GOOGLE_CLOUD_PROJECT_ID' in process.env === false) {
-  throw new Error('GOOGLE_CLOUD_PROJECT_ID environment variable must be set.')
+if ('OLLAMA_API_HOST' in process.env === false) {
+  throw new Error('OLLAMA_API_HOST environment variable must be set.')
 }
-
-const googleTranslate = new v2.Translate({
-  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-  key: process.env.GOOGLE_CLOUD_API_KEY
-})
 
 // For each xml file (codes):
 for (const filename of globSync(`${INPUT_PATH}/*.xml`)) {
@@ -35,13 +26,13 @@ for (const filename of globSync(`${INPUT_PATH}/*.xml`)) {
 
   const codeOutputPath = path.join(OUTPUT_PATH, codeName || `${uuid()}`)
 
-  // For each code, create a folder if needed
+  // For each "code", create a folder if needed
   try {
     await fs.mkdir(codeOutputPath)
   } catch (_err) {
   }
 
-  // For each article: prepare output, put in context, and write to separate file
+  // For each "article": prepare output, put in context, and write to separate file
   for (const article of dom.querySelectorAll('article[etat="VIGUEUR"]')) {
     const articleTitle = article.getAttribute('modTitle')
     let articleId = article.getAttribute('id')
@@ -94,11 +85,45 @@ for (const filename of globSync(`${INPUT_PATH}/*.xml`)) {
     output += '\nArticle text (french):\n'
     output += `${article.innerText.trim()}\n\n`
 
-    // English translation
+    // English translation via ollama
     try {
-      const [translation] = await googleTranslate.translate(article.innerText.trim(), 'en')
-      output += '\nArticle text (translated to english by Google):\n'
+      const model = 'vicuna:13b'
+      const prompt = `Translate the following block of text, which is in french, to english. Your response must only contain the translated text and absolutely nothing else:\n${article.innerText.trim()}`
+      const backupPath = path.join(TRANSLATIONS_BACKUP_PATH, `${articleId}.txt`)
+      let translation = ''
+
+      // Load translation from text if already available. Otherwise, ask ollama.
+      try {
+        translation = await fs.readFile(backupPath)
+        console.log(`Translation for ${articleId} pulled from disk.`)
+      } catch (err) {
+        const apiResponse = await fetch(`${process.env.OLLAMA_API_HOST}/api/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model, prompt })
+        })
+
+        const aiResponse = await apiResponse.text()
+
+        for (const jsonLine of aiResponse.split('\n')) {
+          try {
+            const parsed = JSON.parse(jsonLine)
+
+            if (parsed?.response) {
+              translation += parsed.response
+            }
+          } catch (err) { }
+        }
+      }
+
+      if (!translation) {
+        throw new Error('No translation')
+      }
+
+      output += `\nArticle text (translated to english by ${model}):\n`
       output += translation
+
+      await fs.writeFile(backupPath, translation) // Save backup of translation
     } catch (err) {
       console.error(`Could not translate ${articleId}. Skipping.`)
       console.trace(err)

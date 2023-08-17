@@ -1,5 +1,10 @@
-*.xml
-txt/*/*.txt
-node_modules
+.DS_Store
 .env
+
+node_modules
+xml
+txt
 translations_backup
+_translations_backup
+
+test.js

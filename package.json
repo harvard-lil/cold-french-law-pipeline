@@ -5,15 +5,15 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "start-ollama": "ollama run vicuna:13b",
     "pull-xml": "mkdir xml; bash scripts/pull-xml.sh",
-    "xml-to-txt": "mkdir txt; node scripts/xml-to-txt.js",
+    "xml-to-txt": "mkdir txt; mkdir translations_backup; node scripts/xml-to-txt.js",
     "clear-txt": "rm -rf txt; mkdir txt",
     "clear-xml": "rm -rf xml; mkdir xml"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@google-cloud/translate": "^8.0.1",
     "dotenv": "^16.3.1",
     "glob": "^10.3.3",
     "node-html-parser": "^6.1.5",

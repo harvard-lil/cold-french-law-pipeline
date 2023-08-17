@@ -1,30 +1,13 @@
 import fs from 'fs/promises'
 import path from 'path'
 
-import 'dotenv/config'
-
 import { parse } from 'node-html-parser'
 import { globSync } from 'glob'
 import { uuid } from 'uuidv4'
-import { v2 } from '@google-cloud/translate'
 
 const INPUT_PATH = './xml'
 
 const OUTPUT_PATH = './txt'
-
-// Need Google Cloud credentials
-if ('GOOGLE_CLOUD_API_KEY' in process.env === false) {
-  throw new Error('GOOGLE_CLOUD_API_KEY environment variable must be set.')
-}
-
-if ('GOOGLE_CLOUD_PROJECT_ID' in process.env === false) {
-  throw new Error('GOOGLE_CLOUD_PROJECT_ID environment variable must be set.')
-}
-
-const googleTranslate = new v2.Translate({
-  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-  key: process.env.GOOGLE_CLOUD_API_KEY
-})
 
 // For each xml file (codes):
 for (const filename of globSync(`${INPUT_PATH}/*.xml`)) {
@@ -96,9 +79,7 @@ for (const filename of globSync(`${INPUT_PATH}/*.xml`)) {
 
     // English translation
     try {
-      const [translation] = await googleTranslate.translate(article.innerText.trim(), 'en')
-      output += '\nArticle text (translated to english by Google):\n'
-      output += translation
+      // Pass
     } catch (err) {
       console.error(`Could not translate ${articleId}. Skipping.`)
       console.trace(err)

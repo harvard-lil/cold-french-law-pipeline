@@ -97,11 +97,15 @@ for (const filename of globSync(`${INPUT_PATH}/*.xml`)) {
         translation = await fs.readFile(backupPath)
         console.log(`Translation for ${articleId} pulled from disk.`)
       } catch (err) {
+        console.time('ollama-timer')
+
         const apiResponse = await fetch(`${process.env.OLLAMA_API_HOST}/api/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ model, prompt })
         })
+
+        console.timeEnd('ollama-timer')
 
         const aiResponse = await apiResponse.text()
 

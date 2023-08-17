@@ -3,3 +3,5 @@ txt/*/*.txt
 node_modules
 .env
 translations_backup
+_translations_backup
+.DS_Store

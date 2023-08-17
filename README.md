@@ -10,11 +10,18 @@ Generates:
 - 1 folder per _"Code"_
 
 ## How to
-Requires [Node.js 18+](https://nodejs.org/) and [wget](https://formulae.brew.sh/formula/wget).
+Requires [Node.js 18+](https://nodejs.org/), [wget](https://formulae.brew.sh/formula/wget) and [ollama](https://ollama.ai/).
 
 ```bash
 # Install project dependencies
 npm install
+
+# Create environment file
+cp .env.example .env
+
+# Launch ollama and associated API server
+# (Leave open as long as needed)
+npm run start-ollama
 
 # Pull latest XML files from codes.droit.org
 npm run pull-xml
@@ -22,8 +29,3 @@ npm run pull-xml
 # Generate LLM-ready txt files
 npm run xml-to-txt
 ```
-
-## About the "index" folder
-This folder contains information manually extracted from Wikipedia France about _most_ of the available _"codes"_. 
-
-Its purpose is to give context, and help make associations between questions / themes and specific codes. 

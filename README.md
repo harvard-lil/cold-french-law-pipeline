@@ -16,13 +16,6 @@ Requires [Node.js 18+](https://nodejs.org/), [wget](https://formulae.brew.sh/for
 # Install project dependencies
 npm install
 
-# Create environment file
-cp .env.example .env
-
-# Launch ollama and associated API server
-# (Leave open as long as needed)
-npm run start-ollama
-
 # Pull latest XML files from codes.droit.org
 npm run pull-xml
 

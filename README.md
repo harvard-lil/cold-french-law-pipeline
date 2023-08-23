@@ -10,7 +10,7 @@ Generates:
 - 1 folder per _"Code"_
 
 ## How to
-Requires [Node.js 18+](https://nodejs.org/), [wget](https://formulae.brew.sh/formula/wget) and [ollama](https://ollama.ai/).
+Requires [Node.js 18+](https://nodejs.org/), [wget](https://formulae.brew.sh/formula/wget).
 
 ```bash
 # Install project dependencies

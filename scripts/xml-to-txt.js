@@ -55,9 +55,6 @@ for (const filename of globSync(`${INPUT_PATH}/*.xml`)) {
 
     headings.reverse()
 
-    // Intro
-    output += `The following is an excerpt of France's "${codeName}". The rule described in this document is currently applicable french law.\n\n`
-
     // Title
     if (articleNumber) {
       output += `Article ${articleNumber} du ${codeName}. `

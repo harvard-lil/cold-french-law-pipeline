@@ -1,3 +1,7 @@
 {
-  "standard.autoFixOnSave": true
+  "editor.formatOnSave": true,
+  "python.formatting.provider": "black",
+  "python.testing.pytestArgs": [],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }

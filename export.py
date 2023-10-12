@@ -61,7 +61,6 @@ def decompress_and_filter() -> bool:
     os.makedirs(DECOMPRESSED_PATH, exist_ok=True)
 
     to_delete = set()
-
     filepaths = glob.glob(f"{RAW_PATH}/LEGI_*.tar.gz")
 
     #
@@ -72,29 +71,12 @@ def decompress_and_filter() -> bool:
         print(f"Decompressing file {i+1} of {len(filepaths)}")
 
         with tarfile.open(filepath) as tar:
-            #
             # Create a tar-specific directory
-            #
             root_dir = os.path.join(DECOMPRESSED_PATH, tar.members[0].name)
             os.makedirs(root_dir, exist_ok=True)
 
-            #
             # Filter files from tar
-            #
             for member in tar.getmembers():
-                # List entries from `liste_suppression_legi.dat`:
-                # This file is used to indicate which entries need to be deleted from the corpus.
-                # We only keep trace of the filename, which is a unique identifier.
-                if member.name.endswith("liste_suppression_legi.dat"):
-                    raw = tar.extractfile(member).read()
-                    lines = str(raw, encoding="utf-8").split("\n")
-
-                    for line in lines:
-                        identifier = line.split("/")[-1]
-
-                        if identifier and identifier.startswith("LEGIARTI"):
-                            to_delete.add(identifier)
-
                 # List and extract LEGIARTI files from "code_et_TNC_en_vigueur"
                 if "code_et_TNC_en_vigueur" in member.name:
                     filename = member.name.split("/")[-1]  # Extract filename
@@ -107,6 +89,19 @@ def decompress_and_filter() -> bool:
                     raw = tar.extractfile(member).read()
                     with open(output, "wb") as file:
                         file.write(raw)
+
+                # List entries from `liste_suppression_legi.dat`:
+                # This file is used to indicate which entries need to be deleted from the corpus.
+                # We only keep trace of the filename, which is a unique identifier.
+                if member.name.endswith("liste_suppression_legi.dat"):
+                    raw = tar.extractfile(member).read()
+                    lines = str(raw, encoding="utf-8").split("\n")
+
+                    for line in lines:
+                        identifier = line.split("/")[-1]
+
+                        if identifier and identifier.startswith("LEGIARTI"):
+                            to_delete.add(identifier)
 
     #
     # Clear up LEGIARTI files marked for deletion

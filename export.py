@@ -97,8 +97,8 @@ def tar_to_xml() -> bool:
                         file.write(raw)
 
                 # List entries from "liste_suppression_legi.dat":
-                # This file is used to indicate which entries need to be deleted from the corpus.
-                # We only keep trace of the filename, which is a unique identifier.
+                # - This file is used to indicate which entries need to be deleted from the corpus.
+                # - We only keep trace of the filename, which is a unique identifier.
                 if member.name.endswith("liste_suppression_legi.dat"):
                     raw = tar.extractfile(member).read()
                     lines = str(raw, encoding="utf-8").split("\n")

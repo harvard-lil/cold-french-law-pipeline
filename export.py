@@ -34,7 +34,9 @@ CSV_PATH = os.path.join(os.getcwd(), "csv")
 
 def download_latest() -> bool:
     """
-    Lists and downloads .tar.gz files to download from https://echanges.dila.gouv.fr/OPENDATA/LEGI/
+    Lists and downloads .tar.gz files from https://echanges.dila.gouv.fr/OPENDATA/LEGI/
+    - Saves files in "RAW_PATH"
+    - Will not download file if already present locally
     """
     os.makedirs(RAW_PATH, exist_ok=True)
 
@@ -62,9 +64,10 @@ def download_latest() -> bool:
 
 def tar_to_xml() -> bool:
     """
-    Decompresses the .tar.gz files downloaded previously and:
-    - Only LEGIARTI files from "xyz/legi/global/code_et_TNC_en_vigueur"
-    - Uses "liste_suppression_legi.dat" to delete obsolete LEGIARTI entries.
+    Decompresses the .tar.gz present in "RAW_PATH".
+    - Only extracts LEGIARTI files from "xyz/legi/global/code_et_TNC_en_vigueur"
+    - Uses "liste_suppression_legi.dat" to delete obsolete LEGIARTI entries
+    - Saves files in "DECOMPRESSED_PATH"
     """
     os.makedirs(DECOMPRESSED_PATH, exist_ok=True)
 
@@ -72,17 +75,14 @@ def tar_to_xml() -> bool:
     filepaths = glob.glob(f"{RAW_PATH}/*.tar.gz")
     filepaths.sort()
 
-    #
     # Decompress and filter files
-    #
     for i in range(0, len(filepaths)):
         filepath = filepaths[i]
-        print(filepath)
         print(f"Decompressing file {i+1} of {len(filepaths)}")
 
         with tarfile.open(filepath) as tar:
             for member in tar.getmembers():
-                # List and extract LEGIARTI files from "code_et_TNC_en_vigueur"
+                # List and extract LEGIARTI files from the "code_et_TNC_en_vigueur" folder
                 if "code_et_TNC_en_vigueur" in member.name:
                     filename = member.name.split("/")[-1]  # Extract filename
 
@@ -92,10 +92,11 @@ def tar_to_xml() -> bool:
                     output = os.path.join(DECOMPRESSED_PATH, filename)
 
                     raw = tar.extractfile(member).read()
+
                     with open(output, "wb") as file:
                         file.write(raw)
 
-                # List entries from `liste_suppression_legi.dat`:
+                # List entries from "liste_suppression_legi.dat":
                 # This file is used to indicate which entries need to be deleted from the corpus.
                 # We only keep trace of the filename, which is a unique identifier.
                 if member.name.endswith("liste_suppression_legi.dat"):
@@ -108,20 +109,25 @@ def tar_to_xml() -> bool:
                         if identifier and identifier.startswith("LEGIARTI"):
                             to_delete.add(identifier)
 
-    #
-    # Clear up LEGIARTI files marked for deletion
-    #
+    # Clear up LEGIARTI files marked for deletion in "liste_suppression_legi.dat" files
+    print(f"{len(to_delete)} obsolete entries were marked for deletion.")
+
+    to_delete_found = 0
+
     for identifier in to_delete:
         for found in glob.glob(f"{DECOMPRESSED_PATH}/{identifier}.xml"):
-            print(f"{found.split('/')[-1]} was marked for deletion - deleting")
+            to_delete_found += 1
             os.unlink(found)
+
+    print(f"{len(to_delete_found)} obsolete entries were found and deleted.")
 
     return True
 
 
 def xml_to_csv() -> bool:
     """
-    Reads through decompressed/*/*.xml and extracts relevant contents into CSV files.
+    Reads through decompressed/*.xml and extracts relevant contents into CSV files
+    - Saves files under "CSV_PATH"
     """
     os.makedirs(CSV_PATH, exist_ok=True)
 
@@ -132,7 +138,7 @@ def xml_to_csv() -> bool:
     print(f"{total} XML files to process.")
 
     for xml in xmls:
-        print(f"Parsing file {read+1} of {total}")
+        print(f"Parsing file {read+1} of {total}.")
 
         doc = minidom.parse(xml)
         read += 1
@@ -173,14 +179,12 @@ def xml_to_csv() -> bool:
             date_debut = doc.getElementsByTagName("DATE_DEBUT")
             entry["article_date_debut"] = date_debut[0].firstChild.wholeText
         except Exception:
-            print("A")
             pass
 
         try:
             date_fin = doc.getElementsByTagName("DATE_FIN")
             entry["article_date_fin"] = date_fin[0].firstChild.wholeText
         except Exception:
-            print("B")
             pass
 
         try:
@@ -264,8 +268,21 @@ def xml_to_csv() -> bool:
 
 def export():
     """
-    Orchestration function.
+    Orchestration function: runs the entire export script
     """
+    print(80 * "-")
+    print(f"Downloading latest archives from {LEGI_BASE_URL}.")
+    print(80 * "-")
+    download_latest()
+
+    print(80 * "-")
+    print("Unpacking (relevant) XML files from archives.")
+    print(80 * "-")
+    tar_to_xml()
+
+    print(80 * "-")
+    print("Parsing XML and saving current entries into CSVs.")
+    print(80 * "-")
     xml_to_csv()
 
 

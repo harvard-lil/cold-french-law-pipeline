@@ -242,7 +242,7 @@ def xml_to_csv() -> bool:
         elif output["texte_nature"]:
             nature_to_filename = output["texte_nature"].replace(".", "").replace("/", "")
 
-            if nature_to_filename[-1] != "S":
+            if nature_to_filename[-1] != "S" and nature_to_filename != "LOI_CONSTIT":
                 nature_to_filename += "S"
 
             csv_filename = os.path.join(CSV_PATH, f"{nature_to_filename}.csv")

@@ -223,7 +223,7 @@ def xml_to_csv() -> bool:
         output["article_contenu"] = output["article_contenu"].strip()
 
         # Determine CSV output path based on the article's "nature"
-        csv_filename = os.path.join(CSV_PATH, "MISC.CSV")
+        csv_filename = os.path.join(CSV_PATH, "MISC.csv")
 
         if output["texte_nature"] == "CODE":
             code = (

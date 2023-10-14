@@ -1,19 +1,23 @@
 [tool.poetry]
-name = "cold-frenchlaw-export"
-version = "0.0.1"
-description = ""
 authors = ["Harvard Library Innovation Lab"]
+description = ""
 license = "MIT"
+name = "cold-frenchlaw-export"
 readme = "README.md"
+version = "0.0.1"
 
 [tool.poetry.dependencies]
 python = "^3.11"
 requests = "^2.31.0"
+html2text = "^2020.1.16"
 
 [tool.poetry.group.dev.dependencies]
-flake8 = "^6.1.0"
 black = "^23.9.1"
+flake8 = "^6.1.0"
 
 [build-system]
-requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
+
+[tool.black]
+line-length = 100

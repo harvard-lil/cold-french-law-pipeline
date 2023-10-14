@@ -41,7 +41,7 @@ def download_latest() -> bool:
     os.makedirs(RAW_PATH, exist_ok=True)
 
     html = requests.get(LEGI_BASE_URL)
-    filenames = re.findall("*.tar.gz", html.text)
+    filenames = re.findall("([\w\_\-]+.tar.gz)", html.text)
     filenames = list(set(filenames))  # Deduping
 
     if not filenames:
@@ -119,7 +119,7 @@ def tar_to_xml() -> bool:
             to_delete_found += 1
             os.unlink(found)
 
-    print(f"{len(to_delete_found)} obsolete entries were found and deleted.")
+    print(f"{to_delete_found} obsolete entries were found and deleted.")
 
     return True
 
@@ -143,7 +143,7 @@ def xml_to_csv() -> bool:
         doc = minidom.parse(xml)
         read += 1
 
-        entry = {
+        output = {
             "article_identifier": "",
             "article_num": "",
             "article_etat": "",
@@ -168,66 +168,66 @@ def xml_to_csv() -> bool:
         titre_tm_ref = doc.getElementsByTagName("CONTEXTE")[0].getElementsByTagName("TITRE_TM")
 
         # Pull "article" metadata
-        entry["article_identifier"] = doc.getElementsByTagName("ID")[0].firstChild.wholeText
+        output["article_identifier"] = doc.getElementsByTagName("ID")[0].firstChild.wholeText
 
         try:
-            entry["article_num"] = doc.getElementsByTagName("NUM")[0].firstChild.wholeText
+            output["article_num"] = doc.getElementsByTagName("NUM")[0].firstChild.wholeText
         except Exception:
             pass
 
         try:
             date_debut = doc.getElementsByTagName("DATE_DEBUT")
-            entry["article_date_debut"] = date_debut[0].firstChild.wholeText
+            output["article_date_debut"] = date_debut[0].firstChild.wholeText
         except Exception:
             pass
 
         try:
             date_fin = doc.getElementsByTagName("DATE_FIN")
-            entry["article_date_fin"] = date_fin[0].firstChild.wholeText
+            output["article_date_fin"] = date_fin[0].firstChild.wholeText
         except Exception:
             pass
 
         try:
-            entry["article_etat"] = doc.getElementsByTagName("ETAT")[0].firstChild.wholeText
+            output["article_etat"] = doc.getElementsByTagName("ETAT")[0].firstChild.wholeText
         except Exception:
             pass
 
         # Skip entries that are not in "VIGUEUR"
-        if len(entry["article_etat"]) > 0 and entry["article_etat"] != "VIGUEUR":
+        if len(output["article_etat"]) > 0 and output["article_etat"] != "VIGUEUR":
             skipped += 1
             continue
 
         # Pull "texte" metadata
-        entry["texte_nature"] = texte_ref.getAttribute("nature")
-        entry["texte_ministere"] = texte_ref.getAttribute("ministere")
-        entry["texte_num"] = texte_ref.getAttribute("nor")
-        entry["texte_nor"] = texte_ref.getAttribute("nor")
-        entry["texte_num_parution_jo"] = texte_ref.getAttribute("num_parution_jo")
-        entry["texte_titre_court"] = titre_txt_ref.getAttribute("c_titre_court")
-        entry["texte_titre"] = titre_txt_ref.firstChild.wholeText
+        output["texte_nature"] = texte_ref.getAttribute("nature")
+        output["texte_ministere"] = texte_ref.getAttribute("ministere")
+        output["texte_num"] = texte_ref.getAttribute("nor")
+        output["texte_nor"] = texte_ref.getAttribute("nor")
+        output["texte_num_parution_jo"] = texte_ref.getAttribute("num_parution_jo")
+        output["texte_titre_court"] = titre_txt_ref.getAttribute("c_titre_court")
+        output["texte_titre"] = titre_txt_ref.firstChild.wholeText
 
         # Pull "texte" context
         for ref in titre_tm_ref:
             section = ref.firstChild.wholeText
             if section:
-                entry["texte_contexte"] += section.strip() + "\n"
+                output["texte_contexte"] += section.strip() + "\n"
 
         # Pull textual contents for article
         for contenu in doc.getElementsByTagName("CONTENU"):
             try:
                 parsed = html2text.html2text(contenu.toxml())
-                entry["article_contenu"] += parsed
+                output["article_contenu"] += parsed
             except Exception:
                 pass
 
-        entry["article_contenu"] = entry["article_contenu"].strip()
+        output["article_contenu"] = output["article_contenu"].strip()
 
         # Determine CSV output path based on the article's "nature"
         csv_filename = os.path.join(CSV_PATH, "MISC.CSV")
 
-        if entry["texte_nature"] == "CODE":
+        if output["texte_nature"] == "CODE":
             code = (
-                entry["texte_titre"]
+                output["texte_titre"]
                 .upper()
                 .replace(" ", "-")
                 .replace("'", "-")
@@ -239,8 +239,8 @@ def xml_to_csv() -> bool:
                 .replace(")", "")
             )
             csv_filename = os.path.join(CSV_PATH, f"{code}.csv")
-        elif entry["texte_nature"]:
-            nature_to_filename = entry["texte_nature"].replace(".", "").replace("/", "")
+        elif output["texte_nature"]:
+            nature_to_filename = output["texte_nature"].replace(".", "").replace("/", "")
 
             if nature_to_filename[-1] != "S":
                 nature_to_filename += "S"
@@ -254,15 +254,15 @@ def xml_to_csv() -> bool:
             csv_file_exists = True
 
         with open(csv_filename, "a", encoding="utf-8") as file:
-            writer = csv.DictWriter(file, fieldnames=entry.keys())
+            writer = csv.DictWriter(file, fieldnames=output.keys())
 
             if not csv_file_exists:  # Only write header once
                 writer.writeheader()
 
-            writer.writerow(entry)
+            writer.writerow(output)
 
-    print(f"{skipped} of {read} entries skipped.")
-    print(f"{read - skipped} written to CSVs.")
+    print(f"{skipped} of {read} article files skipped.")
+    print(f"{read - skipped} article files written to CSVs.")
     return True
 
 
@@ -271,7 +271,7 @@ def export():
     Orchestration function: runs the entire export script
     """
     print(80 * "-")
-    print(f"Downloading latest archives from {LEGI_BASE_URL}.")
+    print(f"Downloading latest archives from {LEGI_BASE_URL}")
     print(80 * "-")
     download_latest()
 

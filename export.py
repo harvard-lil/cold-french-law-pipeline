@@ -1,6 +1,4 @@
 """
-[!] Work in progress
-
 This export script:
 - Pulls the latest LEGI dataset from https://echanges.dila.gouv.fr/OPENDATA/LEGI/
 - Decompresses it and extract only currently applicable LEGIARTI files
@@ -126,8 +124,8 @@ def tar_to_xml() -> bool:
 
 def xml_to_csv() -> bool:
     """
-    Reads through decompressed/*.xml and extracts relevant contents into CSV files
-    - Saves files under "CSV_PATH"
+    Reads through decompressed/*.xml and extracts relevant contents into a CSV file.
+    Saves file under "CSV_PATH"
     """
     os.makedirs(CSV_PATH, exist_ok=True)
 
@@ -222,32 +220,8 @@ def xml_to_csv() -> bool:
 
         output["article_contenu"] = output["article_contenu"].strip()
 
-        # Determine CSV output path based on the article's "nature"
-        csv_filename = os.path.join(CSV_PATH, "MISC.csv")
-
-        if output["texte_nature"] == "CODE":
-            code = (
-                output["texte_titre"]
-                .upper()
-                .replace(" ", "-")
-                .replace("'", "-")
-                .replace("_", "-")
-                .replace(",", "")
-                .replace(".", "")
-                .replace("/", "")
-                .replace("(", "")
-                .replace(")", "")
-            )
-            csv_filename = os.path.join(CSV_PATH, f"{code}.csv")
-        elif output["texte_nature"]:
-            nature_to_filename = output["texte_nature"].replace(".", "").replace("/", "")
-
-            if nature_to_filename[-1] != "S" and nature_to_filename != "LOI_CONSTIT":
-                nature_to_filename += "S"
-
-            csv_filename = os.path.join(CSV_PATH, f"{nature_to_filename}.csv")
-
         # Write to CSV
+        csv_filename = os.path.join(CSV_PATH, "legi.csv")
         csv_file_exists = False
 
         if os.path.isfile(csv_filename):
@@ -262,7 +236,7 @@ def xml_to_csv() -> bool:
             writer.writerow(output)
 
     print(f"{skipped} of {read} article files skipped.")
-    print(f"{read - skipped} article files written to CSVs.")
+    print(f"{read - skipped} articles written to CSV.")
     return True
 
 

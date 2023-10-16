@@ -1,24 +1,18 @@
-# french-law-for-llms
+# cold-french-law-export
 
 > 🚧 Work in progress
 
-Parses [codes.droit.org](https://codes.droit.org)'s XML files into text files that can be _"ingested"_ by an LLM, for example via embeddings.
+Exports currently applicable law articles from [France's LEGI dataset](https://www.data.gouv.fr/fr/datasets/legi-codes-lois-et-reglements-consolides/) into a single CSV file.
 
-## Output
-Generates:
-- 1 contextualized file per law _"article"_.
-- 1 folder per _"Code"_
+---
 
 ## How to
-Requires [Node.js 18+](https://nodejs.org/), [wget](https://formulae.brew.sh/formula/wget).
+Requires [Python 3.11+](https://www.python.org/) and [Poetry](https://python-poetry.org/).
 
-```bash
-# Install project dependencies
-npm install
+1. Install project dependencies with `poetry install`
+2. Run pipeline with `poetry run python export.py`
+3. Export will be under `./csv/LEGI.csv`
 
-# Pull latest XML files from codes.droit.org
-npm run pull-xml
-
-# Generate LLM-ready txt files
-npm run xml-to-txt
-```
+We recommend clearing up the `decompressed` and `csv` folders in between runs. 
+- The former is used by the script extract relevant `.xml` files from the LEGI dataset for processing
+- The latter contains the CSV output of the pipeline.

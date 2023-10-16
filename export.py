@@ -2,7 +2,7 @@
 This export script:
 - Pulls the latest LEGI dataset from https://echanges.dila.gouv.fr/OPENDATA/LEGI/
 - Decompresses it and extract only currently applicable LEGIARTI files
-- Creates CSV files split by "nature"
+- Outputs to CSV
 
 More info on the upstream dataset:
 https://www.data.gouv.fr/fr/datasets/legi-codes-lois-et-reglements-consolides/

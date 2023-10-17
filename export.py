@@ -198,7 +198,7 @@ def xml_to_csv() -> bool:
         # Pull "texte" metadata
         output["texte_nature"] = texte_ref.getAttribute("nature")
         output["texte_ministere"] = texte_ref.getAttribute("ministere")
-        output["texte_num"] = texte_ref.getAttribute("nor")
+        output["texte_num"] = texte_ref.getAttribute("num")
         output["texte_nor"] = texte_ref.getAttribute("nor")
         output["texte_num_parution_jo"] = texte_ref.getAttribute("num_parution_jo")
         output["texte_titre_court"] = titre_txt_ref.getAttribute("c_titre_court")
@@ -221,7 +221,7 @@ def xml_to_csv() -> bool:
         output["article_contenu"] = output["article_contenu"].strip()
 
         # Write to CSV
-        csv_filename = os.path.join(CSV_PATH, "legi.csv")
+        csv_filename = os.path.join(CSV_PATH, "LEGI.csv")
         csv_file_exists = False
 
         if os.path.isfile(csv_filename):
@@ -247,12 +247,12 @@ def export():
     print(80 * "-")
     print(f"Downloading latest archives from {LEGI_BASE_URL}")
     print(80 * "-")
-    download_latest()
+    # download_latest()
 
     print(80 * "-")
     print("Unpacking (relevant) XML files from archives.")
     print(80 * "-")
-    tar_to_xml()
+    # tar_to_xml()
 
     print(80 * "-")
     print("Parsing XML and saving current entries into CSVs.")

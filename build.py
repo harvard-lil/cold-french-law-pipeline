@@ -1,12 +1,3 @@
-"""
-This export script:
-- Pulls the latest LEGI dataset from https://echanges.dila.gouv.fr/OPENDATA/LEGI/
-- Decompresses it and extract only currently applicable LEGIARTI files
-- Outputs to CSV
-
-More info on the upstream dataset:
-https://www.data.gouv.fr/fr/datasets/legi-codes-lois-et-reglements-consolides/
-"""
 import re
 import os
 import tarfile
@@ -16,27 +7,69 @@ import csv
 
 import requests
 import html2text
+import click
 
-LEGI_BASE_URL = "https://echanges.dila.gouv.fr/OPENDATA/LEGI/"
-""" Base URL for the LEGI dataset. """
+from const import LEGI_BASE_URL, LEGI_TAR_PATH, LEGI_UNPACKED_PATH, COLD_CSV_PATH
 
-RAW_PATH = os.path.join(os.getcwd(), "raw")
-""" Path in which to write .tar.gz files. """
 
-DECOMPRESSED_PATH = os.path.join(os.getcwd(), "decompressed")
-""" Path in which the .tar.gz files will be decompressed. """
+@click.command()
+@click.option(
+    "--skip-download",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="If set, skips downloading latest archives from the LEGI dataset.",
+)
+@click.option(
+    "--skip-unpack",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="If set, skips unpacking XML files from archives.",
+)
+@click.option(
+    "--skip-csv",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="If set, skips generating LEGI.csv.",
+)
+def build(skip_download=False, skip_unpack=False, skip_csv=False):
+    """
+    Builds the COLD French Law dataset:
+    - Pulls the latest LEGI dataset from https://echanges.dila.gouv.fr/OPENDATA/LEGI/
+    - Decompresses it and extract only currently applicable LEGIARTI files
+    - Outputs to CSV (data/csv/LEGI.csv)
 
-CSV_PATH = os.path.join(os.getcwd(), "csv")
-""" Path in which the CSV files will be written. """
+    More info on the upstream dataset:
+    https://www.data.gouv.fr/fr/datasets/legi-codes-lois-et-reglements-consolides/
+    """
+    if skip_download is not True:
+        click.echo(80 * "-")
+        click.echo(f"Downloading latest archives from {LEGI_BASE_URL}")
+        click.echo(80 * "-")
+        download_latest()
+
+    if skip_unpack is not True:
+        click.echo(80 * "-")
+        click.echo("Unpacking (relevant) XML files from archives.")
+        click.echo(80 * "-")
+        tar_to_xml()
+
+    if skip_csv is not True:
+        click.echo(80 * "-")
+        click.echo("Parsing XML and saving current entries into CSVs.")
+        click.echo(80 * "-")
+        xml_to_csv()
 
 
 def download_latest() -> bool:
     """
     Lists and downloads .tar.gz files from https://echanges.dila.gouv.fr/OPENDATA/LEGI/
-    - Saves files in "RAW_PATH"
+    - Saves files in "LEGI_TAR_PATH"
     - Will not download file if already present locally
     """
-    os.makedirs(RAW_PATH, exist_ok=True)
+    os.makedirs(LEGI_TAR_PATH, exist_ok=True)
 
     html = requests.get(LEGI_BASE_URL)
     filenames = re.findall("([\w\_\-]+.tar.gz)", html.text)
@@ -46,14 +79,14 @@ def download_latest() -> bool:
         raise Exception("No .tar.gz file to download")
 
     for filename in filenames:
-        filepath = os.path.join(RAW_PATH, filename)
+        filepath = os.path.join(LEGI_TAR_PATH, filename)
 
         if os.path.isfile(filepath):
-            print(f"{filename} already exists - skipping.")
+            click.echo(f"{filename} already exists - skipping.")
             continue
 
         with open(filepath, "wb") as file:
-            print(f"Downloading {filename}")
+            click.echo(f"Downloading {filename}")
             response = requests.get(f"{LEGI_BASE_URL}{filename}", allow_redirects=True)
             file.write(response.content)
 
@@ -62,21 +95,21 @@ def download_latest() -> bool:
 
 def tar_to_xml() -> bool:
     """
-    Decompresses the .tar.gz present in "RAW_PATH".
+    Decompresses the .tar.gz present in "LEGI_TAR_PATH".
     - Only extracts LEGIARTI files from "xyz/legi/global/code_et_TNC_en_vigueur"
     - Uses "liste_suppression_legi.dat" to delete obsolete LEGIARTI entries
-    - Saves files in "DECOMPRESSED_PATH"
+    - Saves files in "LEGI_UNPACKED_PATH"
     """
-    os.makedirs(DECOMPRESSED_PATH, exist_ok=True)
+    os.makedirs(LEGI_UNPACKED_PATH, exist_ok=True)
 
     to_delete = set()
-    filepaths = glob.glob(f"{RAW_PATH}/*.tar.gz")
+    filepaths = glob.glob(f"{LEGI_TAR_PATH}/*.tar.gz")
     filepaths.sort()
 
     # Decompress and filter files
     for i in range(0, len(filepaths)):
         filepath = filepaths[i]
-        print(f"Decompressing file {i+1} of {len(filepaths)}")
+        click.echo(f"Decompressing file {i+1} of {len(filepaths)}")
 
         with tarfile.open(filepath) as tar:
             for member in tar.getmembers():
@@ -89,9 +122,9 @@ def tar_to_xml() -> bool:
 
                     # Use the first 15 chars of each file as directory
                     grouping = filename[0:15]
-                    os.makedirs(os.path.join(DECOMPRESSED_PATH, grouping), exist_ok=True)
+                    os.makedirs(os.path.join(LEGI_UNPACKED_PATH, grouping), exist_ok=True)
 
-                    output = os.path.join(DECOMPRESSED_PATH, grouping, filename)
+                    output = os.path.join(LEGI_UNPACKED_PATH, grouping, filename)
 
                     raw = tar.extractfile(member).read()
 
@@ -112,58 +145,70 @@ def tar_to_xml() -> bool:
                             to_delete.add(identifier)
 
     # Clear up LEGIARTI files marked for deletion in "liste_suppression_legi.dat" files
-    print(f"{len(to_delete)} obsolete entries were marked for deletion.")
+    click.echo(f"{len(to_delete)} obsolete entries were marked for deletion.")
 
     to_delete_found = 0
 
     for identifier in to_delete:
-        filepath = f"{DECOMPRESSED_PATH}/{identifier[0:15]}/{identifier}.xml"
+        filepath = f"{LEGI_UNPACKED_PATH}/{identifier[0:15]}/{identifier}.xml"
         if os.path.isfile(filepath):
             to_delete_found += 1
             os.unlink(filepath)
 
-    print(f"{to_delete_found} obsolete entries were found and deleted.")
+    click.echo(f"{to_delete_found} obsolete entries were found and deleted.")
 
     return True
 
 
 def xml_to_csv() -> bool:
     """
-    Reads through decompressed/*/*.xml and extracts relevant contents into a CSV file.
-    Saves file under "CSV_PATH"
+    Reads through LEGI_UNPACKED_PATH/*/*.xml and extracts relevant contents into a CSV file.
+    Saves file under "COLD_CSV_PATH"
     """
-    os.makedirs(CSV_PATH, exist_ok=True)
+    os.makedirs(COLD_CSV_PATH, exist_ok=True)
 
-    xmls = glob.glob(f"{DECOMPRESSED_PATH}/*.xml")
+    # List XML files to process
+    xmls = glob.glob(f"{LEGI_UNPACKED_PATH}/*/*.xml")
     total = len(xmls)
     read = 0
     skipped = 0
-    print(f"{total} XML files to process.")
+    click.echo(f"{total} XML files to process.")
 
+    output_format = {
+        "article_identifier": "",
+        "article_num": "",
+        "article_etat": "",
+        "article_date_debut": "",
+        "article_date_fin": "",
+        "texte_date_publi": "",
+        "texte_date_signature": "",
+        "texte_nature": "",
+        "texte_ministere": "",
+        "texte_num": "",
+        "texte_nor": "",
+        "texte_num_parution_jo": "",
+        "texte_titre": "",
+        "texte_titre_court": "",
+        "texte_contexte": "",
+        "article_contenu": "",
+    }
+
+    # Initialize CSV
+    csv_filename = os.path.join(COLD_CSV_PATH, "cold-frenchlaw.csv")
+
+    with open(csv_filename, "w+", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=output_format.keys())
+        writer.writeheader()
+
+    # Parse each XML file and collect relevant information.
+    # Add to CSV on the fly.
     for xml in xmls:
-        print(f"Parsing file {read+1} of {total}.")
+        click.echo(f"Parsing file {read+1} of {total}.")
 
         doc = minidom.parse(xml)
         read += 1
 
-        output = {
-            "article_identifier": "",
-            "article_num": "",
-            "article_etat": "",
-            "article_date_debut": "",
-            "article_date_fin": "",
-            "texte_date_publi": "",
-            "texte_date_signature": "",
-            "texte_nature": "",
-            "texte_ministere": "",
-            "texte_num": "",
-            "texte_nor": "",
-            "texte_num_parution_jo": "",
-            "texte_titre": "",
-            "texte_titre_court": "",
-            "texte_contexte": "",
-            "article_contenu": "",
-        }
+        output = dict(output_format)
 
         # References to XML nodes
         texte_ref = doc.getElementsByTagName("CONTEXTE")[0].getElementsByTagName("TEXTE")[0]
@@ -226,44 +271,14 @@ def xml_to_csv() -> bool:
         output["article_contenu"] = output["article_contenu"].strip()
 
         # Write to CSV
-        csv_filename = os.path.join(CSV_PATH, "LEGI.csv")
-        csv_file_exists = False
-
-        if os.path.isfile(csv_filename):
-            csv_file_exists = True
-
         with open(csv_filename, "a", encoding="utf-8") as file:
             writer = csv.DictWriter(file, fieldnames=output.keys())
-
-            if not csv_file_exists:  # Only write header once
-                writer.writeheader()
-
             writer.writerow(output)
 
-    print(f"{skipped} of {read} article files skipped.")
-    print(f"{read - skipped} articles written to CSV.")
+    click.echo(f"{skipped} of {read} article files skipped.")
+    click.echo(f"{read - skipped} articles written to CSV.")
     return True
 
 
-def export():
-    """
-    Orchestration function: runs the entire export script
-    """
-    print(80 * "-")
-    print(f"Downloading latest archives from {LEGI_BASE_URL}")
-    print(80 * "-")
-    download_latest()
-
-    print(80 * "-")
-    print("Unpacking (relevant) XML files from archives.")
-    print(80 * "-")
-    tar_to_xml()
-
-    print(80 * "-")
-    print("Parsing XML and saving current entries into CSVs.")
-    print(80 * "-")
-    xml_to_csv()
-
-
 if __name__ == "__main__":
-    export()
+    build()

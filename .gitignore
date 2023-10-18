@@ -1,5 +1,7 @@
 .DS_Store
 .env
-raw
-decompressed
-csv
+*.tar.gz
+*.xml
+*.csv
+*.pyc
+TODO.md

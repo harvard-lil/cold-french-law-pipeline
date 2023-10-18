@@ -7,10 +7,13 @@ DATA_PATH = os.path.join(os.getcwd(), "data")
 """ Path to the data folder. """
 
 LEGI_TAR_PATH = os.path.join(DATA_PATH, "legi_tar")
-""" Path in which original .tar.gz files from the LEGI dataset will be written. """
+""" Folder in which .tar.gz files from the LEGI dataset will be downloaded. """
 
 LEGI_UNPACKED_PATH = os.path.join(DATA_PATH, "legi_unpacked")
-""" Path in which the original LEGI .tar.gz files will be unpacked. """
+""" Folder in which pre-filtered XML files from the LEGI .tar.gz files will be unpacked. """
 
 COLD_CSV_PATH = os.path.join(DATA_PATH, "cold_csv")
-""" Path in which the filtered CSV file will be written. """
+""" Folder in which the processed collection will be written into a CSV file. """
+
+COLD_JSON_PATH = os.path.join(DATA_PATH, "cold_json")
+""" Folder in which JSON files will be saved when exporting collection to JSON. """

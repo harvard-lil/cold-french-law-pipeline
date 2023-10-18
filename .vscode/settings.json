@@ -1,5 +1,5 @@
 {
   "editor.formatOnSave": true,
   "python.formatting.provider": "black",
-  "files.exclude": { "decompressed/*.xml": true }
+  "files.exclude": { "data/legi_unpacked/*/*.xml": true }
 }

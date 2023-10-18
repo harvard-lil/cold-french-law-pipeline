@@ -32,17 +32,20 @@ from const import LEGI_BASE_URL, LEGI_TAR_PATH, LEGI_UNPACKED_PATH, COLD_CSV_PAT
     is_flag=True,
     required=False,
     default=False,
-    help="If set, skips generating LEGI.csv.",
+    help="If set, skips generating cold-frenchlaw.csv.",
 )
 def build(skip_download=False, skip_unpack=False, skip_csv=False):
     """
     Builds the COLD French Law dataset:
     - Pulls the latest LEGI dataset from https://echanges.dila.gouv.fr/OPENDATA/LEGI/
     - Decompresses it and extract only currently applicable LEGIARTI files
-    - Outputs to CSV (data/csv/LEGI.csv)
+    - Outputs to filtered CSV (data/csv/cold-french-law.csv)
 
     More info on the upstream dataset:
     https://www.data.gouv.fr/fr/datasets/legi-codes-lois-et-reglements-consolides/
+
+    TODO:
+    - Ingest translated entries if provided.
     """
     if skip_download is not True:
         click.echo(80 * "-")

@@ -87,7 +87,11 @@ def tar_to_xml() -> bool:
                     if not filename.startswith("LEGIARTI"):
                         continue
 
-                    output = os.path.join(DECOMPRESSED_PATH, filename)
+                    # Use the first 15 chars of each file as directory
+                    grouping = filename[0:15]
+                    os.makedirs(os.path.join(DECOMPRESSED_PATH, grouping), exist_ok=True)
+
+                    output = os.path.join(DECOMPRESSED_PATH, grouping, filename)
 
                     raw = tar.extractfile(member).read()
 
@@ -113,9 +117,10 @@ def tar_to_xml() -> bool:
     to_delete_found = 0
 
     for identifier in to_delete:
-        for found in glob.glob(f"{DECOMPRESSED_PATH}/{identifier}.xml"):
+        filepath = f"{DECOMPRESSED_PATH}/{identifier[0:15]}/{identifier}.xml"
+        if os.path.isfile(filepath):
             to_delete_found += 1
-            os.unlink(found)
+            os.unlink(filepath)
 
     print(f"{to_delete_found} obsolete entries were found and deleted.")
 
@@ -124,7 +129,7 @@ def tar_to_xml() -> bool:
 
 def xml_to_csv() -> bool:
     """
-    Reads through decompressed/*.xml and extracts relevant contents into a CSV file.
+    Reads through decompressed/*/*.xml and extracts relevant contents into a CSV file.
     Saves file under "CSV_PATH"
     """
     os.makedirs(CSV_PATH, exist_ok=True)
@@ -247,12 +252,12 @@ def export():
     print(80 * "-")
     print(f"Downloading latest archives from {LEGI_BASE_URL}")
     print(80 * "-")
-    # download_latest()
+    download_latest()
 
     print(80 * "-")
     print("Unpacking (relevant) XML files from archives.")
     print(80 * "-")
-    # tar_to_xml()
+    tar_to_xml()
 
     print(80 * "-")
     print("Parsing XML and saving current entries into CSVs.")

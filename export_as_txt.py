@@ -7,7 +7,7 @@ import sys
 import click
 from datasets import load_dataset
 
-from const import COLD_CSV_PATH, COLD_JSON_PATH, JSON_EXPORT_KEYS
+from const import COLD_CSV_PATH, COLD_TXT_PATH
 
 
 @click.command()
@@ -20,13 +20,15 @@ from const import COLD_CSV_PATH, COLD_JSON_PATH, JSON_EXPORT_KEYS
 @click.option(
     "--limit", default=None, help="If set, will export up to X entries. Helpful for testing."
 )
-def export_as_json(source="hugging-face", limit=None):
+def export_as_txt(source="hugging-face", limit=None):
     """
-    Exports dataset as individual JSON files with subset of fields.
+    Exports dataset as individual TXT files with subset of fields.
 
-    Exported fields: See const.JSON_EXPORT_KEYS
+    Export format:
+
+    TODO: Specialize between original / translated output when translations become available.
     """
-    os.makedirs(COLD_JSON_PATH, exist_ok=True)
+    os.makedirs(COLD_TXT_PATH, exist_ok=True)
 
     if limit is None:
         limit = math.inf
@@ -34,12 +36,12 @@ def export_as_json(source="hugging-face", limit=None):
         limit = int(limit)
 
     if source == "hugging-face":
-        hf_to_json(limit)
+        hf_to_txt(limit)
     elif source == "csv":
-        csv_to_json(limit)
+        csv_to_txt(limit)
 
 
-def hf_to_json(limit=None) -> bool:
+def hf_to_txt(limit=None) -> bool:
     """
     Loads dataset from Hugging Face and exports entries as individual JSON files.
     """
@@ -59,7 +61,7 @@ def hf_to_json(limit=None) -> bool:
             click.echo(f"Limit reached ({limit})")
             break
 
-        write_json(entry)
+        write_txt(entry)
 
         i += 1
 
@@ -67,7 +69,7 @@ def hf_to_json(limit=None) -> bool:
     return True
 
 
-def csv_to_json(limit=None):
+def csv_to_txt(limit=None):
     """
     Loads dataset from local CSV and exports entries as individual JSON files.
     """
@@ -83,21 +85,23 @@ def csv_to_json(limit=None):
                 click.echo(f"Limit reached ({limit})")
                 break
 
-            write_json(entry)
+            write_txt(entry)
 
             i += 1
 
-    click.echo(f"{i} JSON files written to disk.")
+    click.echo(f"{i} TXT files written to disk.")
     return True
 
 
-def write_json(entry: dict) -> bool:
+def write_txt(entry: dict) -> bool:
     """
-    Writes individual record as a JSON file.
+    Writes individual record as TXT file.
     """
     identifier = entry["article_identifier"]
+    filename = ""
     grouping = "misc"
     sub_grouping = ""
+    output = ""
 
     # Use "texte_nature" as grouping, and "texte_titre_court" or "texte_ministere" as subgrouping
     if entry["texte_nature"] == "CODE":
@@ -107,24 +111,27 @@ def write_json(entry: dict) -> bool:
         grouping = entry["texte_nature"].lower()
         sub_grouping = entry["texte_ministere"].lower()
 
-    os.makedirs(os.path.join(COLD_JSON_PATH, grouping), exist_ok=True)
+    os.makedirs(os.path.join(COLD_TXT_PATH, grouping), exist_ok=True)
 
     if sub_grouping:
-        os.makedirs(os.path.join(COLD_JSON_PATH, grouping, sub_grouping), exist_ok=True)
+        os.makedirs(os.path.join(COLD_TXT_PATH, grouping, sub_grouping), exist_ok=True)
 
-    filename = os.path.join(COLD_JSON_PATH, grouping, sub_grouping, f"{identifier}.json")
+    filename = os.path.join(COLD_TXT_PATH, grouping, sub_grouping, f"{identifier}.txt")
 
-    output = {}
-
-    for key in JSON_EXPORT_KEYS:
-        output[key] = entry[key]
+    # Assemble and write output
+    if grouping == "code":
+        output = f"Article {entry['article_num']} du {entry['texte_titre_court']}.\n"
+        output += entry["article_contenu"].strip()
+    else:
+        output = f"{entry['texte_titre']}\n"
+        output += entry["article_contenu"].strip()
 
     with open(filename, "w+") as file:
-        click.echo(f"{identifier} exported as JSON.")
-        json.dump(output, file, ensure_ascii=False)
+        click.echo(f"{identifier} exported as TXT.")
+        file.write(output)
 
     return True
 
 
 if __name__ == "__main__":
-    export_as_json()
+    export_as_txt()

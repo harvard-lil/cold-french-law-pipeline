@@ -30,3 +30,6 @@ JSON_EXPORT_KEYS = [
     "article_contenu",
 ]
 """ Keys used by the export_as_json feature. """
+
+COLD_TXT_PATH = os.path.join(DATA_PATH, "cold_txt")
+""" Folder in which JSON files will be saved when exporting collection to TEXT. """

@@ -103,7 +103,7 @@ def write_txt(entry: dict) -> bool:
     sub_grouping = ""
     output = ""
 
-    # Use "texte_nature" as grouping, and "texte_titre_court" or "texte_ministere" as subgrouping
+    # Use "texte_nature" as grouping, and "texte_titre_court" or "texte_ministere" as sub grouping
     if entry["texte_nature"] == "CODE":
         grouping = "code"
         sub_grouping = entry["texte_titre_court"].lower()

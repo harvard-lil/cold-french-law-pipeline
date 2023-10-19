@@ -17,3 +17,16 @@ COLD_CSV_PATH = os.path.join(DATA_PATH, "cold_csv")
 
 COLD_JSON_PATH = os.path.join(DATA_PATH, "cold_json")
 """ Folder in which JSON files will be saved when exporting collection to JSON. """
+
+JSON_EXPORT_KEYS = [
+    "article_identifier",
+    "article_num",
+    "texte_num",
+    "texte_nature",
+    "texte_ministere",
+    "texte_titre",
+    "texte_titre_court",
+    "texte_contexte",
+    "article_contenu",
+]
+""" Keys used by the export_as_json feature. """

@@ -2,11 +2,12 @@ import os
 import json
 import csv
 import math
+import sys
 
 import click
 from datasets import load_dataset
 
-from const import COLD_CSV_PATH, COLD_JSON_PATH
+from const import COLD_CSV_PATH, COLD_JSON_PATH, JSON_EXPORT_KEYS
 
 
 @click.command()
@@ -23,16 +24,7 @@ def export_to_json(source="hugging-face", limit=None):
     """
     Exports dataset as individual JSON files with subset of fields.
 
-    Exported fields:
-    - article_identifier
-    - article_num
-    - texte_num
-    - texte_nature
-    - texte_ministere
-    - texte_titre
-    - texte_titre_court
-    - texte_contexte
-    - article_contenu
+    Exported fields: See const.JSON_EXPORT_KEYS
     """
     os.makedirs(COLD_JSON_PATH, exist_ok=True)
 
@@ -81,6 +73,8 @@ def csv_to_json(limit=None):
     """
     click.echo("Reading COLD French Law dataset from local CSV")
 
+    csv.field_size_limit(sys.maxsize)
+
     i = 0
 
     with open(os.path.join(COLD_CSV_PATH, "cold-french-law.csv"), "r") as data:
@@ -88,8 +82,6 @@ def csv_to_json(limit=None):
             if i >= limit:
                 click.echo(f"Limit reached ({limit})")
                 break
-
-            print(entry)
 
             write_json(entry)
 
@@ -111,17 +103,10 @@ def write_json(entry: dict) -> bool:
 
     filename = os.path.join(COLD_JSON_PATH, grouping, f"{identifier}.json")
 
-    output = {
-        "article_identifier": entry["article_identifier"],
-        "article_num": entry["article_num"],
-        "texte_num": entry["texte_num"],
-        "texte_nature": entry["texte_nature"],
-        "texte_ministere": entry["texte_ministere"],
-        "texte_titre": entry["texte_titre"],
-        "texte_titre_court": entry["texte_titre_court"],
-        "texte_contexte": entry["texte_contexte"],
-        "article_contenu": entry["article_contenu"],
-    }
+    output = {}
+
+    for key in JSON_EXPORT_KEYS:
+        output[key] = entry[key]
 
     with open(filename, "w+") as file:
         click.echo(f"{identifier} exported as JSON.")

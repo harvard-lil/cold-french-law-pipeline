@@ -197,7 +197,7 @@ def xml_to_csv() -> bool:
     }
 
     # Initialize CSV
-    csv_filename = os.path.join(COLD_CSV_PATH, "cold-frenchlaw.csv")
+    csv_filename = os.path.join(COLD_CSV_PATH, "cold-french-law.csv")
 
     with open(csv_filename, "w+", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=output_format.keys())

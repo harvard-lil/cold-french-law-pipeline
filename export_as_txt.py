@@ -43,7 +43,7 @@ def export_as_txt(source="hugging-face", limit=None):
 
 def hf_to_txt(limit=None) -> bool:
     """
-    Loads dataset from Hugging Face and exports entries as individual JSON files.
+    Loads dataset from Hugging Face and exports entries as individual TXT files.
     """
     click.echo("Reading COLD French Law dataset from Hugging Face")
 
@@ -71,7 +71,7 @@ def hf_to_txt(limit=None) -> bool:
 
 def csv_to_txt(limit=None):
     """
-    Loads dataset from local CSV and exports entries as individual JSON files.
+    Loads dataset from local CSV and exports entries as individual TXT files.
     """
     click.echo("Reading COLD French Law dataset from local CSV")
 

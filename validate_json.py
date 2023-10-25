@@ -13,10 +13,6 @@ def validate_json(path):
     """
     Checks that a set of JSON files are in a format that matches what export_as_json generates.
     """
-    if not path.endswith(".json"):
-        click.echo("Provided path must target .json files.")
-        exit(1)
-
     files_to_check = glob.glob(path)
 
     if len(files_to_check) < 1:
@@ -26,9 +22,13 @@ def validate_json(path):
     checked = 0
     valid = 0
     invalid = 0
+
     for filepath in files_to_check:
         try:
             checked += 1
+
+            if not filepath.endswith(".json"):
+                continue
 
             with open(filepath, "r") as file:
                 entry = json.load(file)

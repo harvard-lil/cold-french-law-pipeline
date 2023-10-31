@@ -4,3 +4,5 @@ data/*/*
 *.pyc
 *.zip
 TODO.md
+merge.py
+test/

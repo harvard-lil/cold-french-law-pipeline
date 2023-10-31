@@ -13,7 +13,7 @@ def validate_json(path):
     """
     Checks that a set of JSON files are in a format that matches what export_as_json generates.
     """
-    files_to_check = glob.glob(path)
+    files_to_check = glob.glob(path, recursive=True)
 
     if len(files_to_check) < 1:
         click.echo("No files to check.")

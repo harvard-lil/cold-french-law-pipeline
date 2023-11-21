@@ -43,9 +43,6 @@ def build(skip_download=False, skip_unpack=False, skip_csv=False):
 
     More info on the upstream dataset:
     https://www.data.gouv.fr/fr/datasets/legi-codes-lois-et-reglements-consolides/
-
-    TODO:
-    - Ingest translated entries if provided.
     """
     if skip_download is not True:
         click.echo(80 * "-")

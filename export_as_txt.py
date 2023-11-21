@@ -23,10 +23,6 @@ from const import COLD_CSV_PATH, COLD_TXT_PATH
 def export_as_txt(source="hugging-face", limit=None):
     """
     Exports dataset as individual TXT files with subset of fields.
-
-    Export format:
-
-    TODO: Specialize between original / translated output when translations become available.
     """
     os.makedirs(COLD_TXT_PATH, exist_ok=True)
 

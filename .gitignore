@@ -4,5 +4,6 @@ data/*/*
 *.pyc
 *.zip
 TODO.md
+split.py
 merge.py
 test/

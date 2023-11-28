@@ -246,13 +246,13 @@ def xml_to_csv() -> bool:
             continue
 
         # Pull "texte" metadata
-        output["texte_nature"] = texte_ref.getAttribute("nature")
-        output["texte_ministere"] = texte_ref.getAttribute("ministere")
-        output["texte_num"] = texte_ref.getAttribute("num")
-        output["texte_nor"] = texte_ref.getAttribute("nor")
-        output["texte_num_parution_jo"] = texte_ref.getAttribute("num_parution_jo")
-        output["texte_titre_court"] = titre_txt_ref.getAttribute("c_titre_court")
-        output["texte_titre"] = titre_txt_ref.firstChild.wholeText
+        output["texte_nature"] = "" + texte_ref.getAttribute("nature")
+        output["texte_ministere"] = "" + texte_ref.getAttribute("ministere")
+        output["texte_num"] = "" + texte_ref.getAttribute("num")
+        output["texte_nor"] = "" + texte_ref.getAttribute("nor")
+        output["texte_num_parution_jo"] = "" + texte_ref.getAttribute("num_parution_jo")
+        output["texte_titre_court"] = "" + titre_txt_ref.getAttribute("c_titre_court")
+        output["texte_titre"] = "" + titre_txt_ref.firstChild.wholeText
 
         # Pull "texte" context
         for ref in titre_tm_ref:

@@ -7,6 +7,7 @@ import csv
 
 import requests
 import html2text
+from bs4 import BeautifulSoup
 import click
 
 from const import LEGI_BASE_URL, LEGI_TAR_PATH, LEGI_UNPACKED_PATH, COLD_CSV_PATH
@@ -190,7 +191,8 @@ def xml_to_csv() -> bool:
         "texte_titre": "",
         "texte_titre_court": "",
         "texte_contexte": "",
-        "article_contenu": "",
+        "article_contenu_markdown": "",
+        "article_contenu_text": "",
     }
 
     # Initialize CSV
@@ -260,15 +262,21 @@ def xml_to_csv() -> bool:
             if section:
                 output["texte_contexte"] += section.strip() + "\n"
 
-        # Pull textual contents for article
+        # Pull textual contents for article:
         for contenu in doc.getElementsByTagName("CONTENU"):
             try:
-                parsed = html2text.html2text(contenu.toxml())
-                output["article_contenu"] += parsed
+                parsed_markdown = html2text.html2text(contenu.toxml())
+                output["article_contenu_markdown"] += parsed_markdown
+
+                parsed_text = "".join(
+                    BeautifulSoup(contenu.toxml(), "html.parser").findAll(string=True)
+                )
+                output["article_contenu_text"] += parsed_text
             except Exception:
                 pass
 
-        output["article_contenu"] = output["article_contenu"].strip()
+        output["article_contenu_markdown"] = output["article_contenu_markdown"].strip()
+        output["article_contenu_text"] = output["article_contenu_text"].strip()
 
         # Write to CSV
         with open(csv_filename, "a", encoding="utf-8") as file:

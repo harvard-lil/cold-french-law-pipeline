@@ -1,5 +1,7 @@
 # cold-french-law-pipeline
 
+> 🚧 Work in progress
+
 CLI pipeline for generating, storing and transforming the [COLD French Law dataset](https://huggingface.co/datasets/harvard-lil/cold-french-law).
 
 The COLD French Law dataset is a collection of all currently applicable law articles compiled from [France's LEGI dataset](https://www.data.gouv.fr/fr/datasets/legi-codes-lois-et-reglements-consolides/).

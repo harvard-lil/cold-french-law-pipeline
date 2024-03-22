@@ -330,7 +330,7 @@ def download_en_translation_data() -> pd.DataFrame:
         repo_type="dataset",
         filename=HF_EN_TRANSLATIONS_FILE,
     )
-
+    
     processed_dfs = []
     malformed_json_count = 0
     processing = 0
@@ -403,7 +403,7 @@ def add_en_translation_data_to_csv() -> None:
     ).drop("article_identifier_en", axis=1)
 
     merged_df.to_csv(COLD_CSV_FILE)
-    click.echo("EN translation data was merged.")
+    click.echo("EN translation data merged.")
 
 
 if __name__ == "__main__":

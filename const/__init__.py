@@ -15,11 +15,11 @@ LEGI_UNPACKED_PATH = os.path.join(DATA_PATH, "legi_unpacked")
 COLD_CSV_PATH = os.path.join(DATA_PATH, "cold_csv")
 """ Folder in which the processed collection will be written into a CSV file. """
 
-MERGED_DATA_PATH = os.path.join(DATA_PATH, "fr_eng")
-""" Folder in which merged data will be written into. """
+COLD_CSV_FILE = os.path.join(COLD_CSV_PATH, "cold-french-law.csv")
+""" Folder in which the processed collection will be written into a CSV file. """
 
-MERGED_DATA_FILE = "cold-french-law-with-eng.csv"
-""" Name of the file the merged data will be written into. """
-
-REPO_ID = "harvard-lil/cold-french-law"
+HF_REPO_ID = "harvard-lil/cold-french-law"
 """ HuggingFace repo the English translations will be pulled from, and the merged data file will be uploaded to. """
+
+HF_EN_TRANSLATIONS_FILE = "en_translations.tar.gz"
+""" Name of the EN translations file on HuggingFace. """

@@ -14,8 +14,15 @@ import json
 import pandas as pd
 from huggingface_hub import hf_hub_download, HfApi
 
-from const import LEGI_BASE_URL, LEGI_TAR_PATH, LEGI_UNPACKED_PATH, COLD_CSV_PATH, MERGED_DATA_PATH, REPO_ID, \
-    MERGED_DATA_FILE
+from const import (
+    LEGI_BASE_URL,
+    LEGI_TAR_PATH,
+    LEGI_UNPACKED_PATH,
+    COLD_CSV_PATH,
+    COLD_CSV_FILE,
+    HF_REPO_ID,
+    HF_EN_TRANSLATIONS_FILE,
+)
 
 
 @click.command()
@@ -34,32 +41,31 @@ from const import LEGI_BASE_URL, LEGI_TAR_PATH, LEGI_UNPACKED_PATH, COLD_CSV_PAT
     help="If set, skips unpacking XML files from archives.",
 )
 @click.option(
-    "--skip-csv",
+    "--skip-legi-to-csv",
     is_flag=True,
     required=False,
     default=False,
-    help="If set, skips generating cold-frenchlaw.csv.",
+    help="If set, skips extracting LEGI articles into a CSV.",
 )
 @click.option(
-    "--skip-merge",
+    "--skip-add-en-translations-to-csv",
     is_flag=True,
     required=False,
     default=False,
-    help="If set, skips merging french and english data.",
+    help="If set, skips downloading and merging available EN translations.",
 )
-@click.option(
-    "--upload-to-hf",
-    is_flag=True,
-    required=False,
-    default=False,
-    help="If set, uploads the merged data csv to HuggingFace.",
-)
-def build(skip_download=False, skip_unpack=False, skip_csv=False, skip_merge=False, upload_to_hf=False):
+def build(
+    skip_download=False,
+    skip_unpack=False,
+    skip_legi_to_csv=False,
+    skip_add_en_translations_to_csv=False,
+):
     """
     Builds the COLD French Law dataset:
     - Pulls the latest LEGI dataset from https://echanges.dila.gouv.fr/OPENDATA/LEGI/
     - Decompresses it and extract only currently applicable LEGIARTI files
     - Outputs to filtered CSV (data/csv/cold-french-law.csv)
+    - Pulls and merges available EN translations from Hugging Face.
 
     More info on the upstream dataset:
     https://www.data.gouv.fr/fr/datasets/legi-codes-lois-et-reglements-consolides/
@@ -68,28 +74,30 @@ def build(skip_download=False, skip_unpack=False, skip_csv=False, skip_merge=Fal
         click.echo(80 * "-")
         click.echo(f"Downloading latest archives from {LEGI_BASE_URL}")
         click.echo(80 * "-")
-        download_latest()
+        download_latest_legi_archives()
 
     if skip_unpack is not True:
         click.echo(80 * "-")
         click.echo("Unpacking (relevant) XML files from archives.")
         click.echo(80 * "-")
-        tar_to_xml()
+        unpack_legi_archives()
 
-    if skip_csv is not True:
+    if skip_legi_to_csv is not True:
         click.echo(80 * "-")
-        click.echo("Parsing XML and saving current entries into CSVs.")
+        click.echo("Parsing LEGI XML and saving current entries into a CSV.")
         click.echo(80 * "-")
-        xml_to_csv()
+        export_legi_to_csv()
 
-    if skip_merge is not True:
+    if skip_add_en_translations_to_csv is not True:
         click.echo(80 * "-")
-        click.echo("Starting to merge french data with english translations.")
+        click.echo("Downloading and merging available EN translations.")
         click.echo(80 * "-")
-        merge(upload_to_hf)
+        add_en_translation_data_to_csv()
+
+    click.echo(f"{COLD_CSV_FILE} is ready.")
 
 
-def download_latest() -> bool:
+def download_latest_legi_archives() -> bool:
     """
     Lists and downloads .tar.gz files from https://echanges.dila.gouv.fr/OPENDATA/LEGI/
     - Saves files in "LEGI_TAR_PATH"
@@ -119,7 +127,7 @@ def download_latest() -> bool:
     return True
 
 
-def tar_to_xml() -> bool:
+def unpack_legi_archives() -> bool:
     """
     Decompresses the .tar.gz present in "LEGI_TAR_PATH".
     - Only extracts LEGIARTI files from "xyz/legi/global/code_et_TNC_en_vigueur"
@@ -186,7 +194,7 @@ def tar_to_xml() -> bool:
     return True
 
 
-def xml_to_csv() -> bool:
+def export_legi_to_csv() -> bool:
     """
     Reads through LEGI_UNPACKED_PATH/*/*.xml and extracts relevant contents into a CSV file.
     Saves file under "COLD_CSV_PATH"
@@ -221,9 +229,7 @@ def xml_to_csv() -> bool:
     }
 
     # Initialize CSV
-    csv_filename = os.path.join(COLD_CSV_PATH, "cold-french-law.csv")
-
-    with open(csv_filename, "w+", encoding="utf-8") as file:
+    with open(COLD_CSV_FILE, "w+", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=output_format.keys())
         writer.writeheader()
 
@@ -304,7 +310,7 @@ def xml_to_csv() -> bool:
         output["article_contenu_text"] = output["article_contenu_text"].strip()
 
         # Write to CSV
-        with open(csv_filename, "a", encoding="utf-8") as file:
+        with open(COLD_CSV_FILE, "a", encoding="utf-8") as file:
             writer = csv.DictWriter(file, fieldnames=output.keys())
             writer.writerow(output)
 
@@ -313,89 +319,91 @@ def xml_to_csv() -> bool:
     return True
 
 
-def prepare() -> pd.DataFrame:
+def download_en_translation_data() -> pd.DataFrame:
     """
-    Downloads the translations file from HuggingFace repo
-    Creates a dataframe with valid json files that start with LEGIARTI
-    Dataframe columns are filtered with columns we are interested in, and appended with _en
+    Downloads the translations file from HuggingFace repo.
+    Creates a dataframe using valid JSON files that start with LEGIARTI.
+    Dataframe columns are filtered with columns we are interested in, and appended with _en.
     """
-    translations_path = hf_hub_download(repo_id=REPO_ID, repo_type="dataset", filename="translations.tar.gz")
+    translations_data = hf_hub_download(
+        repo_id=HF_REPO_ID,
+        repo_type="dataset",
+        filename=HF_EN_TRANSLATIONS_FILE,
+    )
+
     processed_dfs = []
     malformed_json_count = 0
     processing = 0
+
     columns_to_keep = [
         "article_identifier",
         "texte_ministere",
         "texte_titre",
         "texte_titre_court",
         "texte_contexte",
-        "article_contenu_markdown"
+        "article_contenu_markdown",
     ]
 
-    with tarfile.open(translations_path) as tar:
-        for member in tar.getmembers():
-            file_name = member.name.split('/')[-1]
+    with tarfile.open(translations_data) as tar:
+        translation_files = tar.getmembers()
 
-            if file_name.startswith('LEGIARTI'):
-                file_content = tar.extractfile(member).read()
-                processing += 1
-                click.echo(f"Processing json file {processing}")
-                try:
-                    data_dict = json.loads(file_content)
-                    filtered_dict = {k: data_dict[k] for k in columns_to_keep if k in data_dict}
-                except TypeError:
-                    malformed_json_count += 1
-                    continue
-                df = pd.DataFrame(filtered_dict, index=[0])
+        for member in translation_files:
+            file_name = member.name.split("/")[-1]
 
-                # reindex df with selected columns, if col doesn't exist, it will be NaN in new df
-                df = df.reindex(columns_to_keep, axis=1)
-                processed_dfs.append(df)
+            if not file_name.startswith("LEGIARTI"):
+                continue
 
-        click.echo(f"Out of {processing} json files, {malformed_json_count} were marked as malformed.")
+            file_content = tar.extractfile(member).read()
+            processing += 1
+
+            click.echo(f"Processing EN translation file {processing} of {len(translation_files)}")
+
+            try:
+                data_dict = json.loads(file_content)
+                filtered_dict = {k: data_dict[k] for k in columns_to_keep if k in data_dict}
+            except TypeError:
+                malformed_json_count += 1
+                continue
+
+            df = pd.DataFrame(filtered_dict, index=[0])
+
+            # reindex df with selected columns, if col doesn't exist, it will be NaN in new df
+            df = df.reindex(columns_to_keep, axis=1)
+            processed_dfs.append(df)
+
+        click.echo(
+            f"Out of {processing} json files, {malformed_json_count} were marked as malformed."
+        )
 
     # convert the NaN columns to empty string
-    combined_df = pd.concat(processed_dfs, ignore_index=True).fillna('')
+    combined_df = pd.concat(processed_dfs, ignore_index=True).fillna("")
 
     # append _en to columns to distinguish Eng columns from the Fr columns in the resulting csv
-    combined_df.columns = [str(df_col) + '_en' for df_col in combined_df.columns]
+    combined_df.columns = [str(df_col) + "_en" for df_col in combined_df.columns]
     return combined_df
 
 
-def upload_csv_to_hf(file: str) -> None:
-    """"
-    Uploads the csv file to HuggingFace repo
+def add_en_translation_data_to_csv() -> None:
     """
-    api = HfApi()
-    api.upload_file(
-        path_or_fileobj=file,
-        path_in_repo=MERGED_DATA_FILE,
-        repo_id=REPO_ID,
-        repo_type="dataset",
-    )
-
-
-def merge(upload_to_hf: bool = False) -> None:
-    """"
-    Dataframe is merged with the French csv dataframe on the article_identifier column
-    A new csv file is created with the merged dataframe
-    Resulting csv is uploaded to HF if --upload-to-hf flag is passed
+    Appends dataframe generated by download_en_translation_data() to CSV generated by export_legi_to_csv().
+    The resulting file contains both original and translated data, when available.
     """
-    prepared_data = prepare()
+    prepared_data = download_en_translation_data()
 
     # read the Fr csv into a dataframe and convert its NaN columns to empty string
-    fr_df = pd.read_csv(f"{COLD_CSV_PATH}/cold-french-law.csv").fillna('')
+    fr_df = pd.read_csv(COLD_CSV_FILE).fillna("")
 
     # merge and remove the article_identifier_en to avoid duplication of primary key
-    merged_df = pd.merge(fr_df, prepared_data, left_on='article_identifier', right_on='article_identifier_en').drop(
-        'article_identifier_en', axis=1)
+    merged_df = pd.merge(
+        fr_df,
+        prepared_data,
+        how="left",
+        left_on="article_identifier",
+        right_on="article_identifier_en",
+    ).drop("article_identifier_en", axis=1)
 
-    merged_df.to_csv(f"{MERGED_DATA_PATH}/{MERGED_DATA_FILE}")
-    click.echo(f"Merge is complete.")
-
-    if upload_to_hf is True:
-        upload_csv_to_hf(f"{MERGED_DATA_PATH}/{MERGED_DATA_FILE}")
-        click.echo(f"Upload to HF is complete.")
+    merged_df.to_csv(COLD_CSV_FILE)
+    click.echo("EN translation data was merged.")
 
 
 if __name__ == "__main__":

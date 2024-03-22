@@ -319,7 +319,7 @@ def prepare() -> pd.DataFrame:
     Creates a dataframe with valid json files that start with LEGIARTI
     Dataframe columns are filtered with columns we are interested in, and appended with _en
     """
-    translations_path = hf_hub_download(repo_id=REPO_ID, repo_type="dataset", filename="translations.tar.gz")
+    translations_path = hf_hub_download(repo_id=REPO_ID, repo_type="dataset", filename="en_translations.tar.gz")
     processed_dfs = []
     malformed_json_count = 0
     processing = 0
@@ -387,7 +387,8 @@ def merge(upload_to_hf: bool = False) -> None:
     fr_df = pd.read_csv(f"{COLD_CSV_PATH}/cold-french-law.csv").fillna('')
 
     # merge and remove the article_identifier_en to avoid duplication of primary key
-    merged_df = pd.merge(fr_df, prepared_data, left_on='article_identifier', right_on='article_identifier_en').drop(
+    merged_df = pd.merge(fr_df, prepared_data, how='left', left_on='article_identifier',
+                         right_on='article_identifier_en').drop(
         'article_identifier_en', axis=1)
 
     merged_df.to_csv(f"{MERGED_DATA_PATH}/{MERGED_DATA_FILE}")

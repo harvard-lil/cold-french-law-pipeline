@@ -330,7 +330,7 @@ def download_en_translation_data() -> pd.DataFrame:
         repo_type="dataset",
         filename=HF_EN_TRANSLATIONS_FILE,
     )
-    
+
     processed_dfs = []
     malformed_json_count = 0
     processing = 0
@@ -345,18 +345,16 @@ def download_en_translation_data() -> pd.DataFrame:
     ]
 
     with tarfile.open(translations_data) as tar:
-        translation_files = tar.getmembers()
-
-        for member in translation_files:
+        for member in tar.getmembers():
             file_name = member.name.split("/")[-1]
 
             if not file_name.startswith("LEGIARTI"):
                 continue
 
+            click.echo(f"Processing EN translation file {os.path.basename(file_name)}")
+
             file_content = tar.extractfile(member).read()
             processing += 1
-
-            click.echo(f"Processing EN translation file {processing} of {len(translation_files)}")
 
             try:
                 data_dict = json.loads(file_content)

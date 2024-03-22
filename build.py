@@ -332,8 +332,8 @@ def download_en_translation_data() -> pd.DataFrame:
     )
 
     processed_dfs = []
-    malformed_json_count = 0
-    processing = 0
+    invalid_json_count = 0
+    processed_count = 0
 
     columns_to_keep = [
         "article_identifier",
@@ -354,13 +354,13 @@ def download_en_translation_data() -> pd.DataFrame:
             click.echo(f"Processing EN translation file {os.path.basename(file_name)}")
 
             file_content = tar.extractfile(member).read()
-            processing += 1
+            processed_count += 1
 
             try:
                 data_dict = json.loads(file_content)
                 filtered_dict = {k: data_dict[k] for k in columns_to_keep if k in data_dict}
             except TypeError:
-                malformed_json_count += 1
+                invalid_json_count += 1
                 continue
 
             df = pd.DataFrame(filtered_dict, index=[0])
@@ -370,7 +370,7 @@ def download_en_translation_data() -> pd.DataFrame:
             processed_dfs.append(df)
 
         click.echo(
-            f"Out of {processing} json files, {malformed_json_count} were marked as malformed."
+            f"Out of {processed_count} translation files, {invalid_json_count} were invalid JSON."
         )
 
     # convert the NaN columns to empty string
@@ -401,7 +401,7 @@ def add_en_translation_data_to_csv() -> None:
     ).drop("article_identifier_en", axis=1)
 
     merged_df.to_csv(COLD_CSV_FILE)
-    click.echo("EN translation data merged.")
+    click.echo("EN translation data was merged.")
 
 
 if __name__ == "__main__":

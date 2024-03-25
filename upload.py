@@ -24,7 +24,11 @@ def upload_to_hf() -> None:
 
     api.upload_file(
         path_or_fileobj=COLD_CSV_FILE,
-        path_in_repo=os.path.basename(COLD_CSV_FILE),
-        HF_REPO_ID=HF_REPO_ID,
+        path_in_repo="cold-french-law.csv",
+        repo_id="harvard-lil/cold-french-law",
         repo_type="dataset",
     )
+
+
+if __name__ == "__main__":
+    upload_to_hf()

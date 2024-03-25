@@ -3,17 +3,18 @@ authors = ["Harvard Library Innovation Lab"]
 description = ""
 license = "MIT"
 name = "cold-french-law-pipeline"
+package-mode = false
 readme = "README.md"
 version = "0.0.1"
 
 [tool.poetry.dependencies]
+beautifulsoup4 = "^4.12.2"
 click = "^8.1.7"
 datasets = "^2.14.5"
 html2text = "^2020.1.16"
+pandas = "^2.2.1"
 python = "^3.11"
 requests = "^2.31.0"
-beautifulsoup4 = "^4.12.2"
-pandas = "^2.2.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.9.1"

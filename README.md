@@ -29,13 +29,12 @@ poetry install
 ```
 
 ### 3. Run the "build" script
-See options with `--help`:
+Will generate a CSV under `data/cold_csv`.
+
 ```
 # See: build.py --help for a list of available options
 poetry run python build.py
 ```
-
-See output under `data/cold_csv`.
 
 ### 4. Upload to HuggingFace (optional)
 Will attempt to upload the resulting CSV file to `harvard-lil/cold-french-law`

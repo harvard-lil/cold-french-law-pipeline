@@ -279,6 +279,8 @@ def export_legi_to_csv() -> bool:
             continue
 
         # Pull "texte" metadata
+        output["texte_date_publi"] = "" + texte_ref.getAttribute("date_publi")
+        output["texte_date_signature"] = "" + texte_ref.getAttribute("date_signature")
         output["texte_nature"] = "" + texte_ref.getAttribute("nature")
         output["texte_ministere"] = "" + texte_ref.getAttribute("ministere")
         output["texte_num"] = "" + texte_ref.getAttribute("num")
